@@ -51,24 +51,29 @@ app.on('activate', () => {
   }
 })
 ipcMain.on('readData', () => {})
-ipcMain.on('addRecord', (event, args) => {
+ipcMain.on('add', (event, args) => {
   var assets = args[0]
   var liabs = args[1]
   var index = args[2]
+  var category = args[3]
   event.sender.send('reply')
-  var path = './records/' + index + '.csv'
-  var file = fs.openSync(path, 'w+')
-  var toSave = index + '\n' //Spisywanie danych z otrzymanego rekordu do pliku z rozszerzeniem .csv 
-  toSave += assets.reduce((value, asset) => {
-    return value + asset.name + ';' + asset.money + ';' + asset.category + ';'
+  var toSave = index + '\n' //Spisywanie danych z otrzymanego rekordu do pliku z rozszerzeniem .csv
+
+  assets.forEach((asset) => {
+    toSave += asset.name + ';' + asset.money + ';'
   })
   toSave += '\n'
-  toSave += liabs.reduce((value, liab) => {
-    return value + liab.name + ';' + liab.money + ';' + liab.category + ';'
+  liabs.forEach((liab) => {
+    toSave += liab.name + ';' + liab.money + ';'
   })
+  
+  var path = './records/' + category + '/' + index + '.csv'
+  var file = fs.openSync(path, 'w+')
+
   fs.write(file, toSave, (err) => {
-    if (err) console.log(err)
-    else 
+    if (err) 
+      console.log(err)
+    else
       console.log('success in writing file' + index)
     fs.close(file)
   })

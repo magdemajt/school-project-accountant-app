@@ -6,13 +6,14 @@ Vue.use(Router)
 export default new Router({
   routes: [
     {
-      path: '/',
-      name: 'landing-page',
+      path: '/change',
+      name: 'add-or-edit',
       component: require('@/components/NewInput').default
     },
     {
-      path: '*',
-      redirect: '/'
+      path: '/',
+      name: 'landing-page',
+      component: require('@/components/MainBalance').default
     }
   ]
 })

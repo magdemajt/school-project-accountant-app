@@ -1,5 +1,6 @@
 <template>
   <div id="wrapper">
+    <a href="/"><img id="back-arrow" src="~@/assets/back.png" alt="Wróć"></a>
     <img id="logo" src="~@/assets/logo.png" alt="electron-vue">
     <main>
       <div v-if="addingAsset || addingLiab">
@@ -34,7 +35,12 @@
 
 <script>
   export default {
-    name: 'landing-page',
+    name: 'add-or-edit',
+    created () {
+      // if (this.$store.state.Balance.assetCategories.length === 0) {
+      //   this.$store.commit('SET_CATEGORIES')
+      // }
+    },
     methods: {
       save () {
         var assetNum = 0
@@ -112,6 +118,12 @@
     height: auto;
     margin-bottom: 20px;
     width: 420px;
+  }
+
+  #back-arrow {
+    position: absolute;
+    top: 10px;
+    left: 10px;
   }
 
   main {

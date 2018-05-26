@@ -2,17 +2,28 @@
   <div id="wrapper">
     <img id="logo" src="~@/assets/logo.png" alt="electron-vue">
     <main>
+     <div v-if="editing">
+       {{ editCategory.name }}
+       <input type="text" v-model="editName">
+       <input type="text" v-model="editDesc">
+       <input type="number" v-model="editMoney">
+       <!-- <button @click="editAsset(record, subIndex, index)">Edytuj</button> -->
+     </div>
      <div class="full-bar">
       <a href="#/change">Zmiana</a>
        <table>
        <ul>
-         <li v-for="asset in $store.state.Balance.assets">
+         <li v-for="(asset, index) in $store.state.Balance.assets">
            <h3>{{ asset.name }}</h3><button @click="open(asset)"> Otwórz </button>
            <ul>
-             <li v-if="asset.opened" v-for="subAsset in asset.subCategories">
+             <li v-if="asset.opened" v-for="(subAsset, subIndex) in asset.subCategories">
                <h5>{{subAsset.name}}</h5><button @click="open(subAsset)"> Otwórz </button>
                <ul>
-                 <li v-if="subAsset.opened" v-for="records in subAsset.subtable"></li>
+                 <li v-if="subAsset.opened" v-for="(record) in subAsset.subtable">
+                   {{ record.name }} Kwota: {{ record.money }} 
+                   Opis: {{ record.desc }}
+                   <!-- <button @click="startEditing(record, subIndex, index)">Edytuj</button> -->
+                 </li>
                </ul>
              </li>
            </ul>
@@ -31,17 +42,61 @@
       if (this.$store.state.Balance.assets.length + this.$store.state.Balance.liabilities.length === 0) {
         this.$store.commit('INIT_A_L')
         this.$store.commit('SET_CATEGORIES')
+        this.$store.dispatch('loadData')
       }
     },
     methods: {
       open (asset) {
         this.$store.commit('OPEN', asset)
       }
+      // edit (input) {
+      //   this.editDesc = input.desc
+      //   this.editName = input.name
+      //   this.editMoney = input.money
+      // },
+      // startEditing (cur, subIndex, groupIndex) {
+      //   this.currentlyEditing = cur
+      //   this.groupIndex = groupIndex
+      //   this.subIndex = subIndex
+      //   this.editing = true
+      // },
+      // editAsset () {
+      //   let input = this.currentlyEditing
+      //   let indexInSub = this.subIndex
+      //   let indexInGroup = this.groupIndex
+      //   this.edit(input)
+      //   var oldCategory = {name: this.$store.state.Balance.assets[indexInGroup].subCategories[indexInSub].name, indexInSub, indexInGroup}
+      //   var newInp = {name: this.editName, money: this.editMoney, desc: this.editDesc, category: this.editCategory}
+      //   this.editCategory = oldCategory
+      //   event.sender.send('editOne', {old: input, oldCategory, newInp})
+      //   this.editing = false
+      //   this.$store.commit('EDIT_ASSET', {old: input, oldCategory, newInp})
+      // },
+      // editLiab () {
+      //   let input = this.currentlyEditing
+      //   let indexInSub = this.subIndex
+      //   let indexInGroup = this.groupIndex
+      //   this.edit(input)
+      //   var oldCategory = {name: this.$store.state.Balance.liabilities[indexInGroup].subCategories[indexInSub].name, indexInSub, indexInGroup}
+      //   var newInp = {name: this.editName, money: this.editMoney, desc: this.editDesc, category: this.editCategory}
+      //   this.editCategory = oldCategory
+      //   event.sender.send('editOne', {old: input, oldCategory, newInp})
+      //   this.editing = false
+      //   this.$store.commit('EDIT_LIAB', {old: input, oldCategory, newInp})
+      // }
     },
     data: () => {
       return {
         assets: [],
-        liabilities: []
+        liabilities: [],
+        editCategory: {name: ''},
+        editName: '',
+        editMoney: 0,
+        editDesc: '',
+        editing: false,
+        currentlyEditing: {},
+        subIndex: 0,
+        groupIndex: 0
       }
     }
   }

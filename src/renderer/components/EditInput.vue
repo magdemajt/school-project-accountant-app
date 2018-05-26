@@ -3,12 +3,6 @@
     <a href="/"><img id="back-arrow" src="~@/assets/back.png" alt="Wróć"></a>
     <img id="logo" src="~@/assets/logo.png" alt="electron-vue">
     <main>
-      <ul>
-        <li> <h5 @click="clearCurrently">Utwórz nowy</h5> </li>
-        <li v-for="(unfinished, index) in $store.state.Balance.unfinished">
-          <h5 @click="changeCurrentlyEditing(unfinished)">Edytuj numer {{ index }}</h5>
-        </li>
-      </ul>
       <div v-if="addingAsset || addingLiab">
         <input type="text" v-model="addingName" placeholder="Nazwa...">
         <input type="text" v-model="addingDescription" placeholder="Opis...">
@@ -24,26 +18,11 @@
         <input type="number" v-model="addingMoney" placeholder="Kwota...">
         <button type="button" @click="addButtonListener">Akceptuj</button>
       </div>
-      <div v-if="editing !== ''">
-        <input type="text" v-model="editing.name" placeholder="Nazwa...">
-        <input type="text" v-model="editing.desc" placeholder="Opis...">
-        <input type="number" v-model="editing.money" placeholder="Kwota...">
-        <h6>Wybrana kategoria: {{ addingCategory.name }}</h6>
-        <ul>
-          <li v-if="addingAsset" v-for="category in $store.state.Balance.assetCategories">
-            <div @click="editing.category = category">{{ category.name }}</div>
-          </li>
-          <li v-if="addingLiab" v-for="category in $store.state.Balance.liabCategories">
-            <div @click="editing.category = category">{{ category.name }}</div>
-          </li>
-        </ul>
-        <button @click="update">Zatwierdź zmiany</button>
-      </div>
       <div class="left-side">
         <button @click="changeAdding(true)">Dodaj nowe aktywa</button>
         <ul>
           <li v-for="asset in assets">
-            Nazwa: {{ asset.name }} Kategoria: {{ asset.category.name }} Kwota: {{ asset.money }} <button @click="edit(asset)">Zmień</button>
+            Nazwa: {{ asset.name }} Kategoria: {{ asset.category.name }} Kwota: {{ asset.money }}
           </li>
         </ul>
       </div>
@@ -51,7 +30,7 @@
         <button @click="changeAdding(false)">Dodaj nowe pasywa</button>
         <ul>
           <li v-for="liab in liabilities">
-            Nazwa: {{ liab.name }} Kategoria: {{ liab.category.name }} Kwota: {{ liab.money }} <button @click="edit(liab)">Zmień</button>
+            Nazwa: {{ liab.name }} Kategoria: {{ liab.category.name }} Kwota: {{ liab.money }}
           </li>
         </ul>
       </div>
@@ -69,61 +48,29 @@
       // if (this.$store.state.Balance.assetCategories.length === 0) {
       //   this.$store.commit('SET_CATEGORIES')
       // }
-      if (this.$store.state.Balance.unfinished.length === 0) {
-        this.$store.dispatch('getUnfinished')
-      }
     },
     methods: {
       save () {
-        console.log(this.currentlyEditing)
-        if (this.currentlyEditing === '') {
-          if (this.checkNum()) {
-            this.addToVuex()
-            // ....
-            var index = this.$store.state.Balance.lastSavedNumber + 1 // this.$store.state.lastSavedNumber <-- Nazwy plików jako numery kolejnych
-            this.$electron.ipcRenderer.send('add', {assets: this.assets, liabs: this.liabilities, index, unfinished: false})
-            // this.$electron.ipcRenderer.on('reply', () => {
-            // })
-          } else {
-            index = this.$store.state.Balance.lastUnfinishedNumber + 1
-            var toAdd = {assets: this.assets, liabs: this.liabilities, index, unfinished: true}
-            this.$electron.ipcRenderer.send('add', toAdd)
-            this.$store.commit('ADD_INTERNAL', {where: this.$store.state.Balance.unfinished, toAdd})
-          }
-        } else {
-          if (this.checkNum()) {
-            this.addToVuex()
-            // ....
-            index = this.$store.state.Balance.lastSavedNumber + 1 // this.$store.state.lastSavedNumber <-- Nazwy plików jako numery kolejnych
-            this.$electron.ipcRenderer.send('add', {assets: this.assets, liabs: this.liabilities, index, unfinished: false})
-            this.$electron.ipcRenderer.on('saved', () => {
-              this.$electron.ipcRenderer.send('remove', this.currentlyEditing.index)
-              this.$store.commit('REMOVE_UNFINISHED', this.currentlyEditing)
-            })
-          } else {
-            index = this.currentlyEditing.index
-            this.$electron.ipcRenderer.send('add', {assets: this.assets, liabs: this.liabilities, index, unfinished: true})
-          }
-        }
-      },
-      checkNum () {
         var assetNum = 0
-        this.assets.forEach((asset) => {
+        this.assets.forEach((asset, index) => {
           assetNum += asset.money
+          this.addAsset(asset)
         })
         var liabNum = 0
         this.liabilities.forEach((liab) => {
           liabNum += liab.money
-        })
-        return assetNum === liabNum
-      },
-      addToVuex () {
-        this.assets.forEach((asset, index) => {
-          this.addAsset(asset)
-        })
-        this.liabilities.forEach((liab) => {
           this.addLiab(liab)
         })
+        if (assetNum === liabNum) {
+          // ....
+          var index = this.$store.state.Balance.lastSavedNumber + 1 // this.$store.state.lastSavedNumber <-- Nazwy plików jako numery kolejnych
+          this.$electron.ipcRenderer.send('add', {assets: this.assets, liabs: this.liabilities, index, unfinished: false})
+          // this.$electron.ipcRenderer.on('reply', () => {
+          // })
+        } else {
+          index = this.$store.state.Balance.lastUnfinishedNumber + 1
+          this.$electron.ipcRenderer.send('add', {assets: this.assets, liabs: this.liabilities, index, unfinished: true})
+        }
       },
       add (group) {
         if (this.addingCategory.name !== '' && this.addingName !== '') {
@@ -135,11 +82,6 @@
           this.addingMoney = 50
           this.addingCategory = {name: ''}
         }
-      },
-      changeCurrentlyEditing (editing) {
-        this.currentlyEditing = editing
-        this.assets = editing.assets
-        this.liabilities = editing.liabs
       },
       addAsset (item) {
         this.$store.commit('ADD_INTERNAL', {where: this.$store.state.Balance.assets[item.category.indexInGroup].subCategories[item.category.indexInSub].subtable, toAdd: {money: item.addingMoney, name: item.addingName, desc: item.addingDescription}})
@@ -163,17 +105,6 @@
           this.addingAsset = false
           this.addingLiab = true
         }
-      },
-      clearCurrently () {
-        this.currentlyEditing = ''
-        this.assets = []
-        this.liabilities = []
-      },
-      edit (editing) {
-        this.editing = editing
-      },
-      update () {
-        this.editing = ''
       }
     },
     data: () => {
@@ -185,22 +116,7 @@
         addingMoney: 0,
         addingCategory: {name: ''},
         addingName: 'Test',
-        addingDescription: 'Test',
-        currentlyEditing: '' // This is for editing record
-      }
-    },
-    computed: {
-      editing: {
-        get () {
-          return this.$store.state.Balance.editing
-        },
-        set (value) {
-          console.log('Emitted')
-          if (value !== '') {
-            value.money = Number(value.money)
-          }
-          this.$store.commit('EDIT_ONE_UNFINISHED', {value})
-        }
+        addingDescription: 'Test'
       }
     }
   }

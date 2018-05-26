@@ -1,8 +1,13 @@
+import { ipcRenderer } from 'electron'
 const state = {
   assets: [],
   assetCategories: [],
   liabilities: [],
-  liabCategories: []
+  liabCategories: [],
+  lastSavedNumber: 0,
+  unfinished: [],
+  lastUnfinishedNumber: 0,
+  editing: ''
 }
 
 const mutations = {
@@ -115,23 +120,72 @@ const mutations = {
     })
   },
   SET_CATEGORIES (state) {
-    state.assets.forEach((asset) => {
-      asset.subCategories.forEach((subAsset) => {
-        state.assetCategories.push(subAsset.name)
+    state.assets.forEach((asset, assetIndex) => {
+      asset.subCategories.forEach((subAsset, index) => {
+        state.assetCategories.push({name: subAsset.name, indexInSub: index, indexInGroup: assetIndex})
       })
     })
-    state.liabilities.forEach((liab) => {
-      liab.subCategories.forEach((subLiab) => {
-        state.liabCategories.push(subLiab.name)
+    state.liabilities.forEach((liab, liabIndex) => {
+      liab.subCategories.forEach((subLiab, index) => {
+        state.liabCategories.push({name: subLiab.name, indexInGroup: liabIndex, indexInSub: index})
       })
     })
   },
   OPEN (state, asset) {
     asset.opened = !asset.opened
+  },
+  ADD_INTERNAL (state, payload) {
+    payload.where.push(payload.toAdd)
+  },
+  CHANGE_LAST_SAVED (state, newLastSaved) {
+    state.lastSavedNumber = newLastSaved
+  },
+  CHANGE_UNFINISHED (state, newUnfinished) {
+    state.lastUnfinishedNumber = newUnfinished
+  },
+  NEW_BALANCE (state) {
+    state.assets.forEach((asset, assetIndex) => {
+      asset.subCategories.forEach((subAsset, index) => {
+        subAsset.subtable = []
+      })
+    })
+    state.liabilities.forEach((liab, liabIndex) => {
+      liab.subCategories.forEach((subLiab, index) => {
+        subLiab.subtable = []
+      })
+    })
+  },
+  EDIT_ONE_UNFINISHED (state, payload) {
+    state.editing = payload.value
+  },
+  REMOVE_UNFINISHED (state, payload) {
+    state.unfinished.splice(state.unfinished.indexOf(payload), 1)
+  }
+}
+
+const actions = {
+  loadData (context) {
+    ipcRenderer.send('getData', true) // If second argument is true then send assets unless send liabs
+    ipcRenderer.on('sendingData', (event, args) => {
+      args.assets.forEach(asset => {
+        context.commit('ADD_INTERNAL', {where: context.state.assets[asset.category.indexInGroup].subCategories[asset.category.indexInSub].subtable, toAdd: {name: asset.name, money: asset.money, desc: asset.desc, file: args.index}})
+      })
+      args.liabs.forEach(liab => {
+        context.commit('ADD_INTERNAL', {where: context.state.liabilities[liab.category.indexInGroup].subCategories[liab.category.indexInSub].subtable, toAdd: {name: liab.name, money: liab.money, desc: liab.desc, file: args.index}})
+      })
+      context.commit('CHANGE_LAST_SAVED', args.index)
+    })
+  },
+  getUnfinished (context) {
+    ipcRenderer.send('getUnfinished')
+    ipcRenderer.on('sendingUnfinished', (event, args) => {
+      context.commit('ADD_INTERNAL', {where: context.state.unfinished, toAdd: args})
+    })
   }
 }
 
 export default {
   state,
-  mutations
+  mutations,
+  actions
 }

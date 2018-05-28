@@ -7,7 +7,9 @@ const state = {
   lastSavedNumber: 0,
   unfinished: [],
   lastUnfinishedNumber: 0,
-  editing: ''
+  editing: '',
+  balances: [],
+  currentBalance: {balanceId: 0}
 }
 
 const mutations = {
@@ -59,7 +61,7 @@ const mutations = {
           subtable: []
         },
         {
-          name: 'Inwestycje którkoterminowe',
+          name: 'Inwestycje krótkoterminowe',
           opened: false,
           subtable: []
         },
@@ -144,6 +146,17 @@ const mutations = {
     state.lastUnfinishedNumber = newUnfinished
   },
   NEW_BALANCE (state) {
+    // var balanceId = 0
+    // for (var x = 0; x < state.balance.length; x++) {
+    //   var balance = state.balances[x]
+    //   if (balance.balanceId - 1 !== balanceId) {
+    //     balanceId = balance.balanceId - 1
+    //     break
+    //   }
+    //   balanceId = balance.balanceId
+    // }
+
+    ipcRenderer.send('newBalance')
     state.assets.forEach((asset, assetIndex) => {
       asset.subCategories.forEach((subAsset, index) => {
         subAsset.subtable = []
@@ -160,12 +173,24 @@ const mutations = {
   },
   REMOVE_UNFINISHED (state, payload) {
     state.unfinished.splice(state.unfinished.indexOf(payload), 1)
+  },
+  ADD_CATEGORY_NAME_TO_UNFINISHED (state) {
+    state.unfinished.forEach((unf) => {
+      unf.assets.forEach((asset) => {
+        var category = {name: state.assets[asset.category.indexInGroup].subCategories[asset.category.indexInSub].name, indexInSub: asset.category.indexInSub, indexInGroup: asset.category.indexInGroup}
+        asset.category = category
+      })
+      unf.liabs.forEach((liab) => {
+        var category = {name: state.liabilities[liab.category.indexInGroup].subCategories[liab.category.indexInSub].name, indexInSub: liab.category.indexInSub, indexInGroup: liab.category.indexInGroup}
+        liab.category = category
+      })
+    })
   }
 }
 
 const actions = {
   loadData (context) {
-    ipcRenderer.send('getData', true) // If second argument is true then send assets unless send liabs
+    ipcRenderer.send('getData') // If second argument is true then send assets unless send liabs , {balanceId: context.state.currentBalance.balanceId}
     ipcRenderer.on('sendingData', (event, args) => {
       args.assets.forEach(asset => {
         context.commit('ADD_INTERNAL', {where: context.state.assets[asset.category.indexInGroup].subCategories[asset.category.indexInSub].subtable, toAdd: {name: asset.name, money: asset.money, desc: asset.desc, file: args.index}})
@@ -177,11 +202,20 @@ const actions = {
     })
   },
   getUnfinished (context) {
-    ipcRenderer.send('getUnfinished')
+    ipcRenderer.send('getUnfinished') // , {balanceId: context.state.currentBalance.balanceId}
     ipcRenderer.on('sendingUnfinished', (event, args) => {
       context.commit('ADD_INTERNAL', {where: context.state.unfinished, toAdd: args})
+      context.commit('ADD_CATEGORY_NAME_TO_UNFINISHED')
     })
   }
+  // getBalances (context) {
+  //   ipcRenderer.send('getBalances')
+  //   ipcRenderer.on('balances', args => {
+  //     args.forEach((balance) => {
+  //       context.commit('ADD_INTERNAL', {where: context.state.balances, toAdd: {balanceId: balance}})
+  //     })
+  //   })
+  // }
 }
 
 export default {

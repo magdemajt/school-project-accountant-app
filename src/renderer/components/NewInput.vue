@@ -1,68 +1,129 @@
 <template>
   <div id="wrapper">
-    <a href="/"><img id="back-arrow" src="~@/assets/back.png" alt="Wróć"></a>
-    <img id="logo" src="~@/assets/logo.png" alt="electron-vue">
-    <main>
-      <ul>
-        <li> <h5 @click="clearCurrently">Utwórz nowy</h5> </li>
-        <li v-for="(unfinished, index) in $store.state.Balance.unfinished">
-          <h5 @click="changeCurrentlyEditing(unfinished)">Edytuj numer {{ index }}</h5>
-        </li>
-      </ul>
+    <a href="/" class="back" title="Naciśnij, aby powrócić do bilansu!"></a>
+    <div class="container-fluid">
+      <div class="row mb-3 mt-5">
+        <div class="col offset-2"><button @click="changeAdding(true)" class="w-100 btn btn-outline-success">Dodaj nowe aktywa</button></div>
+        <div class="col"><button @click="changeAdding(false)" class="w-100 btn btn-outline-warning">Dodaj nowe pasywa</button></div>
+      </div>
+      <div class="row">
+        <div class="col-2">
+          <ul class="list-group">
+            <li class="btn btn-info" @click="clearCurrently" ><h5 class="mt-2 text-center w-100 h-100">Utwórz nowy</h5></li>
+            <li class="list-group-item" v-for="(unfinished, index) in $store.state.Balance.unfinished" @click="changeCurrentlyEditing(unfinished)">
+              <h5 class="text-center">Edytuj numer {{ index + 1 }}</h5>
+            </li>
+          </ul>
+        </div>
+        <div class="col-5">
+          <ul class="list-group">
+            <li v-for="asset in assets" class="list-group-item list-group-item-success">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="card-title text-center">{{ asset.name }}</h5>
+                  <h6 class="card-subtitle mb-2 text-muted">{{ asset.category.name }}</h6>
+                  <h6 class="card-subtitle mb-2"> {{ asset.money }} PLN </h6>
+                  <p class="card-text text-justify">{{ asset.desc }}</p>
+                  <span @click="confirmRemoval(asset)" class="trash float-right"></span> <span @click="edit(asset)" class="mt-2 float-right mr-2 ml-2 edit"></span>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div class="col-5">
+          <ul class="list-group">
+            <li v-for="liab in liabilities" class="list-group-item list-group-item-warning">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="card-title text-center">{{ liab.name }}</h5>
+                  <h6 class="card-subtitle mb-2 text-muted">{{ liab.category.name }}</h6>
+                  <h6 class="card-subtitle mb-2"> {{ liab.money }} PLN </h6>
+                  <p class="card-text text-justify">{{ liab.desc }}</p>
+                  <span @click="confirmRemoval(liab)" class="trash float-right"></span> <span @click="edit(liab)" class="mt-2 float-right mr-2 ml-2 edit"></span>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
       <div v-if="addingAsset || addingLiab">
-        <input type="text" v-model="addingName" placeholder="Nazwa...">
-        <input type="text" v-model="addingDescription" placeholder="Opis...">
-        <h6>Wybrana kategoria: {{ addingCategory.name }}</h6>
-        <ul>
-          <li v-if="addingAsset" v-for="category in $store.state.Balance.assetCategories">
-            <div @click="addingCategory = category">{{ category.name }}</div>
+        <label for="name">Nazwa rekordu</label>
+        <input type="text" id="name" v-model="addingName" placeholder="Nazwa..." class="form-control mb-2 mt-2" data-toggle="tooltip" title="Tutaj wpisujesz nazwę!">
+        <label for="desc">Opis rekordu</label>
+        <input type="text" id="desc" v-model="addingDescription" placeholder="Opis..." class="form-control mb-2 mt-2" data-toggle="tooltip" title="Tutaj wpisujesz opis!">
+        <h6 class="text-center"><span class="badge badge-info">Wybrana kategoria</span> {{ addingCategory.name }}</h6>
+        <ul class="list-group" data-toggle="tooltip" title="Tutaj wybierasz kategorię!">
+          <li v-if="addingAsset" v-for="category in $store.state.Balance.assetCategories" class="list-group-item list-group-item-success" @click="addingCategory = category">
+            <h5 class="text-justify">{{ category.name }}</h5>
           </li>
-          <li v-if="addingLiab" v-for="category in $store.state.Balance.liabCategories">
-            <div @click="addingCategory = category">{{ category.name }}</div>
-          </li>
-        </ul>
-        <input type="number" v-model="addingMoney" placeholder="Kwota...">
-        <button type="button" @click="addButtonListener">Akceptuj</button>
-      </div>
-      <div v-if="editing !== ''">
-        <input type="text" v-model="editing.name" placeholder="Nazwa...">
-        <input type="text" v-model="editing.desc" placeholder="Opis...">
-        <input type="number" v-model="editing.money" placeholder="Kwota...">
-        <h6>Wybrana kategoria: {{ addingCategory.name }}</h6>
-        <ul>
-          <li v-if="addingAsset" v-for="category in $store.state.Balance.assetCategories">
-            <div @click="editing.category = category">{{ category.name }}</div>
-          </li>
-          <li v-if="addingLiab" v-for="category in $store.state.Balance.liabCategories">
-            <div @click="editing.category = category">{{ category.name }}</div>
+          <li v-if="addingLiab" v-for="category in $store.state.Balance.liabCategories" class="list-group-item list-group-item-warning" @click="addingCategory = category">
+            <h5 class="text-justify">{{ category.name }}</h5>
           </li>
         </ul>
-        <button @click="update">Zatwierdź zmiany</button>
+        <label for="money" class="mt-2">Kwota</label>
+        <input type="number" id="money" v-model="addingMoney" placeholder="Kwota..." class="form-control mb-2 mt-2" data-toggle="tooltip" title="Tutaj wpisujesz kwotę!">
+        <span @click="addButtonListener" class="tick float-right" title="Naciśnij, aby dodać!"></span>
+        <span @click="unAdd" class="cross float-right" title="Naciskając usuwasz obecny wpis!"></span>
       </div>
-      <div class="left-side">
-        <button @click="changeAdding(true)">Dodaj nowe aktywa</button>
-        <ul>
-          <li v-for="asset in assets">
-            Nazwa: {{ asset.name }} Kategoria: {{ asset.category.name }} Kwota: {{ asset.money }} <button @click="edit(asset)">Zmień</button>
-          </li>
-        </ul>
+      <div class="modal" ref="editModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            
+            <!-- Modal Header -->
+            <div class="modal-header">
+              <h4 class="modal-title">Edycja</h4>
+              <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+
+            <!-- Modal body -->
+            <div class="modal-body">
+              <input type="text" v-model="editing.name" placeholder="Nazwa..." class="form-control mb-2 mt-2" data-toggle="tooltip" title="Tutaj zmieniasz nazwę!">
+              <input type="text" v-model="editing.desc" placeholder="Opis..." class="form-control mb-2 mt-2" data-toggle="tooltip" title="Tutaj zmieniasz opis!">
+              <input type="number" v-model="editing.money" placeholder="Kwota..." class="form-control mb-2 mt-2" data-toggle="tooltip" title="Tutaj zmieniasz kwotę!">
+              <h6 v-if="editing !== ''" title="Wybrana kategoria" data-toggle="popover" data-trigger="hover" data-content="Kategorii nie można zmienić, aby to zrobić musisz usunąć ten rekord i dodać nowy">Kategoria: {{ editing.category.name }}</h6>
+            </div>
+
+            <!-- Modal footer -->
+            <div class="modal-footer">
+              <button type="button" class="btn btn-danger" data-dismiss="modal" @click="editing = ''">Zamknij</button>
+              <button @click="update" class="btn btn-outline-success" data-dismiss="modal">Zatwierdź zmiany</button>
+            </div>
+
+          </div>
+        </div>
       </div>
-      <div class="right-side">
-        <button @click="changeAdding(false)">Dodaj nowe pasywa</button>
-        <ul>
-          <li v-for="liab in liabilities">
-            Nazwa: {{ liab.name }} Kategoria: {{ liab.category.name }} Kwota: {{ liab.money }} <button @click="edit(liab)">Zmień</button>
-          </li>
-        </ul>
+      <div class="modal" ref="removeModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            
+            <!-- Modal Header -->
+            <div class="modal-header">
+              <h4 class="modal-title">Czy na pewno chcesz usunąć ten rekord?</h4>
+              <button type="button" class="close" data-dismiss="modal" @click="toRemove = ''">&times;</button>
+            </div>
+
+            <!-- Modal body -->
+            <div class="modal-body">
+            </div>
+
+            <!-- Modal footer -->
+            <div class="modal-footer">
+              <button type="button" class="btn btn-default" data-dismiss="modal" @click="toRemove = ''">Nie</button>
+              <button @click="remove" class="btn btn-outline-danger" data-dismiss="modal">Tak</button>
+            </div>
+
+          </div>
+        </div>
       </div>
-      <div class="full-bar">
-        <button @click="save">Zapisz</button>
+      <div class="footer" v-if="!(addingLiab || addingAsset || editing !== '')">
+        <button @click="save" class="w-100 btn btn-success disk"></button>
       </div>
-    </main>
+    </div>
   </div>
 </template>
 
 <script>
+  import $ from 'jquery'
   export default {
     name: 'add-or-edit',
     created () {
@@ -73,9 +134,16 @@
         this.$store.dispatch('getUnfinished')
       }
     },
+    mounted () {
+      $('[data-toggle="tooltip"]').tooltip()
+      $('[data-toggle="popover"]').popover()
+    },
     methods: {
       save () {
-        console.log(this.currentlyEditing)
+        if (this.assets.length + this.liabilities.length === 0) {
+          console.log(this.assets.length + this.liabilities.length)
+          return false
+        }
         if (this.currentlyEditing === '') {
           if (this.checkNum()) {
             this.addToVuex()
@@ -105,6 +173,8 @@
             this.$electron.ipcRenderer.send('add', {assets: this.assets, liabs: this.liabilities, index, unfinished: true})
           }
         }
+        this.assets = []
+        this.liabilities = []
       },
       checkNum () {
         var assetNum = 0
@@ -126,13 +196,13 @@
         })
       },
       add (group) {
-        if (this.addingCategory.name !== '' && this.addingName !== '') {
+        if (this.addingCategory.name !== '' && this.addingName !== '' && this.addingMoney !== 0) {
           this.addingAsset = false
           this.addingLiab = false
           this.addingMoney = Number(this.addingMoney)
           group.push({money: this.addingMoney, name: this.addingName, category: this.addingCategory, desc: this.addingDescription})
-          this.addingName = this.addingDescription = 'Test'
-          this.addingMoney = 50
+          this.addingName = this.addingDescription = ''
+          this.addingMoney = 0
           this.addingCategory = {name: ''}
         }
       },
@@ -163,6 +233,15 @@
           this.addingAsset = false
           this.addingLiab = true
         }
+        this.editing = ''
+      },
+      unAdd () {
+        this.addingAsset = false
+        this.addingLiab = false
+        this.editing = ''
+        this.addingName = this.addingDescription = ''
+        this.addingMoney = 0
+        this.addingCategory = {name: ''}
       },
       clearCurrently () {
         this.currentlyEditing = ''
@@ -171,6 +250,21 @@
       },
       edit (editing) {
         this.editing = editing
+        this.addingAsset = false
+        this.addingLiab = false
+      },
+      confirmRemoval (item) {
+        this.toRemove = item
+      },
+      remove () {
+        var index = this.assets.indexOf(this.toRemove)
+        if (index === -1) {
+          index = this.liabilities.indexOf(this.toRemove)
+          this.liabilities.splice(index, 1)
+        } else {
+          this.assets.splice(index, 1)
+        }
+        this.toRemove = ''
       },
       update () {
         this.editing = ''
@@ -184,9 +278,19 @@
         addingLiab: false,
         addingMoney: 0,
         addingCategory: {name: ''},
-        addingName: 'Test',
-        addingDescription: 'Test',
-        currentlyEditing: '' // This is for editing record
+        addingName: '',
+        addingDescription: '',
+        currentlyEditing: '',
+        toRemove: '' // This is for editing record
+      }
+    },
+    watch: {
+      toRemove (value) {
+        if (value === '') {
+          $(this.$refs.removeModal).modal('hide')
+        } else {
+          $(this.$refs.removeModal).modal('show')
+        }
       }
     },
     computed: {
@@ -198,6 +302,9 @@
           console.log('Emitted')
           if (value !== '') {
             value.money = Number(value.money)
+            $(this.$refs.editModal).modal('show')
+          } else {
+            $(this.$refs.editModal).modal('hide')
           }
           this.$store.commit('EDIT_ONE_UNFINISHED', {value})
         }
@@ -208,93 +315,99 @@
 
 <style>
   @import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro');
+  @import "~bootstrap/dist/css/bootstrap.css";
 
-  * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+  .button{
+    background-image: -webkit-linear-gradient(top, #f4f1ee, #fff);
+    background-image: linear-gradient(top, #f4f1ee, #fff);
+    border-radius: 50%;
+    box-shadow: 0px 8px 10px 0px rgba(0, 0, 0, .3), inset 0px 4px 1px 1px white, inset 0px -3px 1px 1px rgba(204,198,197,.5);
+    float:left;
+    height: 35px;
+    margin: 0 30px 30px 0;
+    position: relative;
+    width: 35px;      
+    -webkit-transition: all .1s linear;
+    transition: all .1s linear;
   }
-
-  body { font-family: 'Source Sans Pro', sans-serif; }
-
-  #wrapper {
-    background:
-      radial-gradient(
-        ellipse at top left,
-        rgba(255, 255, 255, 1) 40%,
-        rgba(229, 229, 229, .9) 100%
-      );
-    height: 100vh;
-    padding: 60px 80px;
-    width: 100vw;
+  .button:after {
+    color:#e9e6e4;
+    content: "";
+    display: block;
+    font-size: 30px;
+    height: 20px;
+    text-decoration: none;
+    text-shadow: 0px -1px 1px #bdb5b4, 1px 1px 1px white;
+    position: absolute;
+    width: 20px;
   }
-
-  #logo {
-    height: auto;
-    margin-bottom: 20px;
-    width: 420px;
+  .trash:after{
+    content: url(~@/assets/trash-can-closed.png);
+    left: 6.5px;
+    top: 8px;
   }
-
-  #back-arrow {
+  .edit:after{
+    content: url(~@/assets/pencil-edit-button.png);
+    left: 5.5px;
+    top: 10px;
+  }
+  .back:after{
+    content: url(~@/assets/back.png);
     position: absolute;
     top: 10px;
     left: 10px;
   }
-
-  main {
-    display: flex;
-    justify-content: space-between;
+  .tick:after{
+    content: "✔";
+    font-size: 35px;
+    left: -15px;
+    top: 15px;
   }
-
-  main > div { flex-basis: 50%; }
-
-  .left-side {
-    display: flex;
-    flex-direction: column;
+  .disk:after{
+    content: url(~@/assets/save-file-option.png);
+    font-size: 35px;
+    left: 5px;
+    top: 5px;
   }
-
-  .welcome {
-    color: #555;
-    font-size: 23px;
-    margin-bottom: 10px;
+  .cross:after{
+    content: "✖";
+    font-size: 35px;
+    position: relative;
+    left: -15px;
+    top: 0px;
   }
-
-  .title {
-    color: #2c3e50;
-    font-size: 20px;
-    font-weight: bold;
-    margin-bottom: 6px;
+  .button:hover{
+    background-image: -webkit-linear-gradient(top, #fff, #f4f1ee);
+    background-image: linear-gradient(top, #fff, #f4f1ee);
+    color:#0088cc;
   }
-
-  .title.alt {
-    font-size: 18px;
-    margin-bottom: 10px;
+  .trash:hover:after{
+    content: url(~@/assets/trash-can.png);
+    text-shadow:0px 0px 6px #f94e66;
   }
-
-  .doc p {
-    color: black;
-    margin-bottom: 10px;
+  .edit:hover:after{
+    content: url(~@/assets/pencil-edit-button-colored.png);
+    text-shadow:0px 0px 6px #f94e66;
   }
-
-  .doc button {
-    font-size: .8em;
-    cursor: pointer;
-    outline: none;
-    padding: 0.75em 2em;
-    border-radius: 2em;
-    display: inline-block;
-    color: #fff;
-    background-color: #4fc08d;
-    transition: all 0.15s ease;
-    box-sizing: border-box;
-    border: 1px solid #4fc08d;
+  .back:hover:after{
+    content: url(~@/assets/back-colored.png);
+    text-shadow:0px 0px 6px #f94e66;
   }
-
-  .doc button.alt {
-    color: #42b983;
-    background-color: transparent;
+  .disk:hover:after{
+    content: "Zapisz";
+    text-shadow:0px 0px 6px #f94e66;
   }
-  .full-bar {
-    width: 100%;
+  .tick:hover:after{
+    color:#83d244;
+    text-shadow:0px 0px 6px #83d244;
+  }
+  .cross:hover:after{
+    color:#eb2f2f;
+    text-shadow:0px 0px 6px #eb2f2f;
+  }
+  .footer {
+    position: absolute;
+    bottom: 10px;
+    width: 98.5%;
   }
 </style>

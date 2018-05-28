@@ -3,6 +3,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 
 const fs = require('fs')
+
 /**
  * Set `__static` path to static files in production
  * https://simulatedgreg.gitbooks.io/electron-vue/content/en/using-static-assets.html
@@ -20,9 +21,9 @@ function createWindow () {
   /**
    * Initial window options
    */
-  if (process.env.NODE_ENV !== 'production') {
-    require('vue-devtools').install()
-  }
+  // if (process.env.NODE_ENV !== 'production') {
+  //   require('vue-devtools').install()
+  // }
   mainWindow = new BrowserWindow({
     height: 600,
     useContentSize: true,
@@ -85,37 +86,82 @@ function getFilesData (path, callback) {
   })
 }
 
-ipcMain.on('getData', (event) => {
+function removeAll (dir, removeFolder) {
+  if (fs.existsSync(dir)) {
+    fs.readdir(dir, (err, files) => {
+      if (err) {
+        throw err
+      }
+      files.forEach(file => {
+        fs.unlinkSync(dir + '/' + file)
+      })
+      if (removeFolder) {
+        fs.rmdirSync(dir)
+      }
+    })
+  }
+}
+
+function createFolder (dir) {
+  try {
+    fs.mkdirSync(dir)
+  } catch (e) {
+    throw e
+  }
+}
+
+ipcMain.on('getData', (event, args) => {
   if (!fs.existsSync('./records')) {
-    try {
-      fs.mkdirSync('./records')
-    } catch (e) {
-      throw e
-    }
+    createFolder('./records')
+    // createFolder('./records/0')
   }
   getFilesData('./records', (args) => {
     event.sender.send('sendingData', args)
   })
 })
 
-ipcMain.on('getUnfinished', (event) => {
+ipcMain.on('getUnfinished', (event, args) => {
   if (!fs.existsSync('./unfinished')) {
-    try {
-      fs.mkdirSync('./unfinished')
-    } catch (e) {
-      throw e
-    }
+    createFolder('./unfinished')
+    // createFolder('./unfinished/0')
   }
   getFilesData('./unfinished', (args) => {
     event.sender.send('sendingUnfinished', args)
   })
 })
 
+ipcMain.on('newBalance', (event, args) => {
+  // var balanceIndex = args.balanceId
+  // removeAll('./unfinished/' + balanceIndex, false)
+  // removeAll('./records/' + balanceIndex, false)
+  // if (!fs.existsSync('./unfinished/' + balanceIndex)) {
+  //   createFolder('./unfinished/' + balanceIndex)
+  // }
+  // if (!fs.existsSync('./records/' + balanceIndex)) {
+  //   createFolder('./records/' + balanceIndex)
+  // }
+  removeAll('./records', false)
+  removeAll('./unfinished', false)
+})
+
+// ipcMain.on('removeBalance', (event, args) => {
+//   var balanceIndex = args.balanceId
+//   removeAll('./unfinished/' + balanceIndex, true)
+//   removeAll('./records/' + balanceIndex, true)
+// })
+
+// ipcMain.on('getBalances', (event, args) => {
+//   const dirs = p => {
+//     readdirSync(p).filter(f => statSync(join(p, f)).isDirectory())
+//   }
+//   event.sender.send('balances', dirs)
+// })
+
 ipcMain.on('add', (event, args) => {
-  console.log('')
   var assets = args.assets
   var liabs = args.liabs
   var index = args.index
+  // var balanceIndex = args.balanceId
   var toSave = index + '\n' // Spisywanie danych z otrzymanego rekordu do pliku z rozszerzeniem .csv
   toSave += 'Assets\n'
   assets.forEach((asset) => {
@@ -148,7 +194,9 @@ ipcMain.on('add', (event, args) => {
 })
 
 ipcMain.on('remove', (event, args) => {
-  fs.unlinkSync('./unfinished/' + args + '.csv')
+  if (fs.existsSync('./unfinished/' + args + '.csv')) {
+    fs.unlinkSync('./unfinished/' + args + '.csv')
+  }
 })
 
 // ipcMain.on('editOne', (event, args) => {

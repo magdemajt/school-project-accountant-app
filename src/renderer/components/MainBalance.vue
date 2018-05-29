@@ -16,7 +16,7 @@
               <li v-if="asset.opened" v-for="(subAsset, subIndex) in asset.subCategories" class="list-group-item list-group-item-success">
                 <h5 class="float-left">{{subAsset.name}}</h5><span @click="open(subAsset)" class="float-right" :class="{expandable: subAsset.subtable.length == 0, expand: subAsset.subtable.length > 0}" title="Naciśnij, aby rozwinąć!"></span>
                 <ul class="list-group float-left w-100">
-                  <li v-if="subAsset.opened" v-for="(record) in subAsset.subtable" class="list-group-item">
+                  <li v-if="subAsset.opened" v-for="record in subAsset.subtable" class="list-group-item">
                     <div class="card">
                       <div class="card-body">
                         <h5 class="card-title text-center">{{ record.name }}</h5>
@@ -26,8 +26,10 @@
                       </div>
                     </div>
                   </li>
+                  <li v-if="subAsset.opened" class="list-group-item">Suma z kategorii: <div class="text-uppercase text-success">{{subAsset.name}}</div> <h4 class="text-center text-success">{{getSum(subAsset.subtable)}} PLN</h4></li>
                 </ul>
               </li>
+              <li v-if="asset.opened" class="list-group-item border-success">Suma z kategorii: <div class="text-uppercase text-success">{{asset.name}}</div> <h4 class="text-center text-success">{{ getSumGroup(asset) }} PLN</h4></li>
             </ul>
           </li>
           <li class="list-group-item list-group-item-success">Suma aktywów: <h4 class="text-center"> {{ assetsSum }} PLN </h4></li>
@@ -42,7 +44,7 @@
               <li v-if="liab.opened" v-for="(subLiab, subIndex) in liab.subCategories" class="list-group-item list-group-item-warning">
                 <h5 class="float-left mr-4">{{subLiab.name}}</h5><span @click="open(subLiab)" class="float-right" :class="{expandable: subLiab.subtable.length == 0, expand: subLiab.subtable.length > 0}" title="Naciśnij, aby rozwinąć!"></span>
                 <ul class="list-group float-left w-100">
-                  <li v-if="subLiab.opened" v-for="(record) in subLiab.subtable" class="list-group-item">
+                  <li v-if="subLiab.opened" v-for="record in subLiab.subtable" class="list-group-item">
                     <div class="card">
                       <div class="card-body">
                         <h5 class="card-title text-center">{{ record.name }}</h5>
@@ -52,8 +54,10 @@
                       </div>
                     </div>
                   </li>
+                  <li v-if="subLiab.opened" class="list-group-item">Suma z kategorii: <div class="text-uppercase text-warning">{{subLiab.name}}</div> <h4 class="text-center text-warning">{{getSum(subLiab.subtable)}} PLN</h4></li>
                 </ul>
-              </li>  
+              </li>
+              <li v-if="liab.opened" class="list-group-item border-warning">Suma z kategorii: <div class="text-uppercase text-warning">{{liab.name}}</div> <h4 class="text-center text-warning">{{ getSumGroup(liab) }} PLN</h4></li> 
             </ul>   
           </li>
           <li class="list-group-item list-group-item-warning">Suma pasywów: <h4 class="text-center"> {{ liabsSum }} PLN </h4></li>
@@ -113,6 +117,20 @@
       },
       createNew () {
         this.$store.commit('NEW_BALANCE')
+      },
+      getSum (subtable) {
+        var sum = 0
+        subtable.forEach(data => {
+          sum += data.money
+        })
+        return sum
+      },
+      getSumGroup (group) {
+        var sum = 0
+        group.subCategories.forEach(cat => {
+          sum += this.getSum(cat.subtable)
+        })
+        return sum
       }
       // edit (input) {
       //   this.editDesc = input.desc

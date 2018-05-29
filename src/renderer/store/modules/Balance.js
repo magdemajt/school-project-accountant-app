@@ -1,4 +1,18 @@
 import { ipcRenderer } from 'electron'
+var BalanceElement = class {
+  constructor (name, subtable) {
+    this.name = name
+    this.subCategories = subtable
+    this.opened = false
+  }
+}
+var BalanceInnerElement = class {
+  constructor (name) {
+    this.name = name
+    this.subtable = []
+    this.opened = false
+  }
+}
 const state = {
   assets: [],
   assetCategories: [],
@@ -14,112 +28,17 @@ const state = {
 
 const mutations = {
   INIT_A_L (state) {
-    state.assets.push({
-      name: 'Aktywa trwałe',
-      opened: false,
-      subCategories: [
-        {
-          name: 'Wartości niematerialne i prawne',
-          opened: false,
-          subtable: []
-        },
-        {
-          name: 'Rzeczowe aktywa trwałe',
-          opened: false,
-          subtable: []
-        },
-        {
-          name: 'Należności długoterminowe',
-          opened: false,
-          subtable: []
-        },
-        {
-          name: 'Inwestycje długoterminowe',
-          opened: false,
-          subtable: []
-        },
-        {
-          name: 'Długoterminowe rozliczenia międzyokresowe',
-          opened: false,
-          subtable: []
-        }
-      ]
-    })
+    var tableFirst = [new BalanceInnerElement('Wartości niematerialne i prawne'), new BalanceInnerElement('Rzeczowe aktywa trwałe'), new BalanceInnerElement('Należności długoterminowe'), new BalanceInnerElement('Inwestycje długoterminowe'), new BalanceInnerElement('Długoterminowe rozliczenia międzyokresowe')]
+    state.assets.push(new BalanceElement('Aktywa trwałe', tableFirst))
     // Obrotowe
-    state.assets.push({
-      name: 'Aktywa obrotowe',
-      opened: false,
-      subCategories: [
-        {
-          name: 'Zapasy',
-          opened: false,
-          subtable: []
-        },
-        {
-          name: 'Należności krótkoterminowe',
-          opened: false,
-          subtable: []
-        },
-        {
-          name: 'Inwestycje krótkoterminowe',
-          opened: false,
-          subtable: []
-        },
-        {
-          name: 'Krótkoterminowe rozliczenia międzyokresowe',
-          opened: false,
-          subtable: []
-        }
-      ]
-    })
+    var tableSecond = [new BalanceInnerElement('Zapasy'), new BalanceInnerElement('Należności krótkoterminowe'), new BalanceInnerElement('Inwestycje krótkoterminowe'), new BalanceInnerElement('Krótkoterminowe rozliczenia międzyokresowe')]
+    state.assets.push(new BalanceElement('Aktywa obrotowe', tableSecond))
     // Pasywa
-    state.liabilities.push({
-      name: 'Kapitał własny',
-      opened: false,
-      subCategories: [
-        {
-          name: 'Kapitał podstawowy',
-          opened: false,
-          subtable: []
-        },
-        {
-          name: 'Kapitał zapasowy',
-          opened: false,
-          subtable: []
-        }
-      ]
-    })
-    state.liabilities.push({
-      name: 'Zobowiązania i rezerwy na zobowiązania',
-      opened: false,
-      subCategories: [
-        {
-          name: 'Rezerwy na zobowiązania',
-          opened: false,
-          subtable: []
-        },
-        {
-          name: 'Zobowiązania długoterminowe',
-          opened: false,
-          subtable: []
-        },
-        {
-          name: 'Inwestycje krótkoterminowe',
-          opened: false,
-          subtable: []
-        },
-        {
-          name: 'Zobowiązania krótkoterminowe',
-          opened: false,
-          subtable: []
-        },
-        {
-          name: 'Rozliczenia międzyokresowe',
-          opened: false,
-          subtable: []
-        }
-      ]
-    })
+    var tableThird = [new BalanceInnerElement('Kapitał podstawowy'), new BalanceInnerElement('Kapitał zapasowy')]
+    state.liabilities.push(new BalanceElement('Kapitał własny', tableThird))
+
+    var tableFourth = [new BalanceInnerElement('Rezerwy na zobowiązania'), new BalanceInnerElement('Zobowiązania długoterminowe'), new BalanceInnerElement('Inwestycje krótkoterminowe'), new BalanceInnerElement('Zobowiązania krótkoterminowe'), new BalanceInnerElement('Rozliczenia międzyokresowe')]
+    state.liabilities.push(new BalanceElement('Zobowiązania i rezerwy na zobowiązania', tableFourth))
   },
   SET_CATEGORIES (state) {
     state.assets.forEach((asset, assetIndex) => {

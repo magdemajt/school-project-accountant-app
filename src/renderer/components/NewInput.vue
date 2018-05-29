@@ -1,6 +1,6 @@
 <template>
   <div id="wrapper">
-    <a href="/" class="back" title="Naciśnij, aby powrócić do bilansu!"></a>
+    <span @click="$router.push('/')" class="back" title="Naciśnij, aby powrócić do bilansu!"></span>
     <div class="container-fluid">
       <div class="row mb-3 mt-5">
         <div class="col offset-2"><button @click="changeAdding(true)" class="w-100 btn btn-outline-success">Dodaj nowe aktywa</button></div>
@@ -85,7 +85,6 @@
 
             <!-- Modal footer -->
             <div class="modal-footer">
-              <button type="button" class="btn btn-danger" data-dismiss="modal" @click="editing = ''">Zamknij</button>
               <button @click="update" class="btn btn-outline-success" data-dismiss="modal">Zatwierdź zmiany</button>
             </div>
 
@@ -212,11 +211,11 @@
         this.liabilities = editing.liabs
       },
       addAsset (item) {
-        this.$store.commit('ADD_INTERNAL', {where: this.$store.state.Balance.assets[item.category.indexInGroup].subCategories[item.category.indexInSub].subtable, toAdd: {money: item.addingMoney, name: item.addingName, desc: item.addingDescription}})
+        this.$store.commit('ADD_INTERNAL', {where: this.$store.state.Balance.assets[item.category.indexInGroup].subCategories[item.category.indexInSub].subtable, toAdd: {money: item.money, name: item.name, desc: item.desc, category: item.category}})
       },
       addLiab (item) {
         console.log(this.$store.state.Balance.liabilities[item.category.indexInGroup].subCategories[item.category.indexInSub])
-        this.$store.commit('ADD_INTERNAL', {where: this.$store.state.Balance.liabilities[item.category.indexInGroup].subCategories[item.category.indexInSub].subtable, toAdd: {money: item.addingMoney, name: item.addingName, desc: item.addingDescription}})
+        this.$store.commit('ADD_INTERNAL', {where: this.$store.state.Balance.liabilities[item.category.indexInGroup].subCategories[item.category.indexInSub].subtable, toAdd: {money: item.money, name: item.name, desc: item.desc, category: item.category}})
       },
       addButtonListener () {
         if (this.addingAsset) {
@@ -267,6 +266,7 @@
         this.toRemove = ''
       },
       update () {
+        this.editing.money = Number(this.editing.money)
         this.editing = ''
       }
     },
